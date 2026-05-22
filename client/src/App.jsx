@@ -1,43 +1,31 @@
 import { useEffect, useState } from 'react';
 import AddLeadModal from './components/AddLeadModal';
 import LeadCard from './components/LeadCard';
-import LeadTimelineModal from './components/LeadTimelineModal';
+import LeadTimelinePanel from './components/LeadTimelinePanel';
+import leadflowLogo from './assets/leadflow-logo.png';
 
 function App() {
   const [leads, setLeads] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState('All');
   const [selectedLead, setSelectedLead] = useState(null);
-
-  // SEARCH STATE
   const [searchTerm, setSearchTerm] = useState('');
-
-  // DARK MODE STATE
   const [darkMode, setDarkMode] = useState(false);
 
-
-  // FETCH LEADS
   const fetchLeads = async () => {
-  try {
-    const res = await fetch(
-      'http://localhost:5000/api/leads'
-    );
+    try {
+      const res = await fetch('http://localhost:5000/api/leads');
+      const data = await res.json();
+      setLeads(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error(error);
+      setLeads([]);
+    }
+  };
 
-    const data = await res.json();
-
-    setLeads(Array.isArray(data) ? data : []);
-
-  } catch (error) {
-    console.error(error);
-    setLeads([]);
-  }
-};
-
-
-  // LOAD LEADS 
   useEffect(() => {
-  fetchLeads();
-}, []);
+    fetchLeads();
+  }, []);
 
   const statuses = [
     'All',
@@ -49,7 +37,6 @@ function App() {
     'Lost',
   ];
 
-  // FILTER LEADS
   const filteredLeads = leads.filter((lead) => {
     const matchesStatus =
       selectedStatus === 'All'
@@ -63,24 +50,50 @@ function App() {
     return matchesStatus && matchesSearch;
   });
 
-  // CHECK IF FOLLOW-UP IS TODAY
-  const isToday = (dateString) => {
-    if (!dateString) return false;
-
-    const date = new Date(dateString);
-    const today = new Date();
-
+  // ACTIVE FOLLOW-UP ONLY
+  const hasActiveFollowUp = (lead) => {
     return (
-      date.getFullYear() === today.getFullYear() &&
-      date.getMonth() === today.getMonth() &&
-      date.getDate() === today.getDate()
+      lead.follow_up_at &&
+      lead.status !== 'Won' &&
+      lead.status !== 'Lost'
     );
   };
 
-  // SORT LEADS
+  // TODAY FOLLOW-UP
+  const isTodayFollowUp = (lead) => {
+    if (!hasActiveFollowUp(lead)) return false;
+
+    const followUp = new Date(lead.follow_up_at);
+    const now = new Date();
+
+    return (
+      followUp >= now &&
+      followUp.getDate() === now.getDate() &&
+      followUp.getMonth() === now.getMonth() &&
+      followUp.getFullYear() === now.getFullYear()
+    );
+  };
+
+  // OVERDUE FOLLOW-UP
+  const isOverdue = (lead) => {
+    if (!hasActiveFollowUp(lead)) return false;
+
+    const followUp = new Date(lead.follow_up_at);
+    const now = new Date();
+
+    return followUp < now;
+  };
+
+  // SORTING
   const sortedLeads = [...filteredLeads].sort((a, b) => {
-    const aToday = isToday(a.follow_up_at);
-    const bToday = isToday(b.follow_up_at);
+    const aOverdue = isOverdue(a);
+    const bOverdue = isOverdue(b);
+
+    const aToday = isTodayFollowUp(a);
+    const bToday = isTodayFollowUp(b);
+
+    if (aOverdue && !bOverdue) return -1;
+    if (!aOverdue && bOverdue) return 1;
 
     if (aToday && !bToday) return -1;
     if (!aToday && bToday) return 1;
@@ -88,261 +101,400 @@ function App() {
     return 0;
   });
 
-  // TODAY'S FOLLOW-UPS
+  // GROUPS
   const todaysFollowUps = sortedLeads.filter((lead) =>
-    isToday(lead.follow_up_at)
+    isTodayFollowUp(lead)
   );
 
-  // OTHER LEADS
+  const overdueLeads = sortedLeads.filter((lead) =>
+    isOverdue(lead)
+  );
+
   const otherLeads = sortedLeads.filter(
-    (lead) => !isToday(lead.follow_up_at)
+    (lead) =>
+      !isTodayFollowUp(lead) &&
+      !isOverdue(lead)
   );
 
   return (
     <div
       style={{
-        minHeight: '100vh',
+        height: '100vh',
         backgroundColor: darkMode ? '#0f172a' : '#f8fafc',
-        padding: '40px 20px',
-        fontFamily: 'Arial, sans-serif',
-        transition: 'all 0.3s ease',
+        fontFamily: 'Inter, Arial, sans-serif',
       }}
     >
       <div
         style={{
-          maxWidth: '900px',
-          margin: '0 auto',
+          display: 'grid',
+          gridTemplateColumns: '390px 1fr',
+          height: '100vh',
         }}
       >
-        {/* HEADER */}
+        {/* LEFT PANEL */}
         <div
           style={{
             display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            marginBottom: '30px',
+            flexDirection: 'column',
+            overflow: 'hidden',
+            padding: '20px',
+            backgroundColor: darkMode
+              ? '#111827'
+              : '#ffffff',
+            borderRight: darkMode
+              ? '1px solid #1e293b'
+              : '1px solid #e5e7eb',
           }}
         >
-          <div>
-            <h1
-              style={{
-                margin: 0,
-                fontSize: '36px',
-                fontWeight: 'bold',
-                color: darkMode ? 'white' : '#0f172a',
-              }}
-            >
-              LeadFlow
-            </h1>
-
-            <p
-              style={{
-                margin: '8px 0 0 0',
-                color: darkMode ? '#cbd5e1' : '#64748b',
-              }}
-            >
-              Manage leads, discussions, and follow-ups
-            </p>
-          </div>
-
-          {/* RIGHT SIDE BUTTONS */}
+          {/* HEADER BAND */}
           <div
             style={{
               display: 'flex',
-              gap: '12px',
               alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '10px 14px',
+              borderRadius: '18px',
+              background: darkMode
+                ? 'linear-gradient(135deg, #1d4ed8, #2563eb)'
+                : 'linear-gradient(135deg, #2563eb, #3b82f6)',
+              marginBottom: '16px',
+              boxShadow:
+                '0 8px 20px rgba(37,99,235,0.22)',
             }}
           >
-            
+            {/* LEFT SECTION */}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+              }}
+            >
+              <img
+                src={leadflowLogo}
+                alt="LeadFlow"
+                style={{
+                  width: '70px',
+                  height: '70px',
+                  objectFit: 'contain',
+                }}
+              />
+
+              <h1
+                style={{
+                  margin: 0,
+                  fontSize: '22px',
+                  fontWeight: '700',
+                  color: 'white',
+                }}
+              >
+                LeadFlow
+              </h1>
+            </div>
+
             {/* DARK MODE BUTTON */}
             <button
               onClick={() => setDarkMode(!darkMode)}
               style={{
-                border: 'none',
-                padding: '12px 16px',
-                borderRadius: '10px',
-                cursor: 'pointer',
-                fontWeight: '600',
-                backgroundColor: darkMode
-                  ? '#334155'
-                  : '#111827',
+                width: '36px',
+                height: '36px',
+                borderRadius: '50%',
+                border:
+                  '1px solid rgba(255,255,255,0.25)',
+                backgroundColor:
+                  'rgba(255,255,255,0.14)',
                 color: 'white',
+                cursor: 'pointer',
+                fontSize: '15px',
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
               }}
             >
-              {darkMode ? '☀️ Light' : '🌙 Dark'}
-            </button>
-
-            {/* ADD LEAD BUTTON */}
-            <button
-              onClick={() => setShowModal(true)}
-              style={{
-                backgroundColor: '#2563eb',
-                color: 'white',
-                border: 'none',
-                padding: '12px 20px',
-                borderRadius: '10px',
-                fontSize: '14px',
-                fontWeight: '600',
-                cursor: 'pointer',
-                boxShadow:
-                  '0 4px 12px rgba(37, 99, 235, 0.25)',
-              }}
-            >
-              + Add Lead
+              {darkMode ? '☀️' : '🌙'}
             </button>
           </div>
-        </div>
 
-        {/* STATUS FILTERS */}
-        <div
-          style={{
-            display: 'flex',
-            gap: '10px',
-            flexWrap: 'wrap',
-            marginBottom: '25px',
-          }}
-        >
-          {statuses.map((status) => (
-            <button
-              key={status}
-              onClick={() => setSelectedStatus(status)}
+          {/* SCROLLABLE AREA */}
+          <div
+            style={{
+              flexGrow: 1,
+              overflowY: 'auto',
+              paddingRight: '4px',
+            }}
+          >
+            {/* FILTERS */}
+            <div
               style={{
-                padding: '8px 16px',
-                borderRadius: '9999px',
-                border: darkMode
-                  ? '1px solid #334155'
-                  : '1px solid #d1d5db',
-                cursor: 'pointer',
-                fontWeight: '500',
-                backgroundColor:
-                  selectedStatus === status
-                    ? '#2563eb'
-                    : darkMode
+                display: 'flex',
+                gap: '8px',
+                flexWrap: 'wrap',
+                marginBottom: '18px',
+              }}
+            >
+              {statuses.map((status) => (
+                <button
+                  key={status}
+                  onClick={() =>
+                    setSelectedStatus(status)
+                  }
+                  style={{
+                    padding: '6px 14px',
+                    borderRadius: '9999px',
+                    border: darkMode
+                      ? '1px solid #334155'
+                      : '1px solid #d1d5db',
+                    cursor: 'pointer',
+                    fontWeight: '500',
+                    fontSize: '12px',
+                    backgroundColor:
+                      selectedStatus === status
+                        ? '#2563eb'
+                        : darkMode
+                        ? '#1e293b'
+                        : 'white',
+                    color:
+                      selectedStatus === status
+                        ? 'white'
+                        : darkMode
+                        ? '#e2e8f0'
+                        : '#374151',
+                  }}
+                >
+                  {status}
+                </button>
+              ))}
+            </div>
+
+            {/* SEARCH */}
+            <div style={{ marginBottom: '18px' }}>
+              <input
+                type="text"
+                placeholder="Search leads..."
+                value={searchTerm}
+                onChange={(e) =>
+                  setSearchTerm(e.target.value)
+                }
+                style={{
+                  width: '100%',
+                  padding: '12px 14px',
+                  borderRadius: '14px',
+                  border: darkMode
+                    ? '1px solid #334155'
+                    : '1px solid #d1d5db',
+                  fontSize: '14px',
+                  backgroundColor: darkMode
                     ? '#1e293b'
                     : 'white',
-                color:
-                  selectedStatus === status
+                  color: darkMode
                     ? 'white'
-                    : darkMode
-                    ? '#e2e8f0'
-                    : '#374151',
-              }}
-            >
-              {status}
-            </button>
-          ))}
-        </div>
+                    : '#111827',
+                  outline: 'none',
+                }}
+              />
+            </div>
 
-        {/* SEARCH BAR */}
-        <div style={{ marginBottom: '25px' }}>
-          <input
-            type="text"
-            placeholder="Search leads by name..."
-            value={searchTerm}
-            onChange={(e) =>
-              setSearchTerm(e.target.value)
-            }
-            style={{
-              width: '100%',
-              padding: '14px 16px',
-              borderRadius: '12px',
-              border: darkMode
-                ? '1px solid #334155'
-                : '1px solid #d1d5db',
-              fontSize: '14px',
-              backgroundColor: darkMode
-                ? '#1e293b'
-                : 'white',
-              color: darkMode ? 'white' : '#000000',
-              outline: 'none',
-              boxSizing: 'border-box',
-              boxShadow: '0 2px 6px rgba(0,0,0,0.05)',
-            }}
-          />
-        </div>
+            {/* TODAY FOLLOW UPS */}
+            {todaysFollowUps.length > 0 && (
+              <>
+                <h2
+                  style={{
+                    marginBottom: '14px',
+                    color: '#dc2626',
+                    fontSize: '16px',
+                  }}
+                >
+                  Today's Follow-Ups (
+                  {todaysFollowUps.length})
+                </h2>
 
-        {/* TODAY FOLLOW UPS */}
-        {todaysFollowUps.length > 0 && (
-          <>
+                {todaysFollowUps.map((lead) => (
+                  <LeadCard
+                    key={lead.id}
+                    lead={lead}
+                    onClick={() =>
+                      setSelectedLead(lead)
+                    }
+                  />
+                ))}
+              </>
+            )}
+
+            {/* OVERDUE */}
+            {overdueLeads.length > 0 && (
+              <>
+                <h2
+                  style={{
+                    marginBottom: '14px',
+                    color: '#eab308',
+                    fontSize: '16px',
+                  }}
+                >
+                  Overdue ({overdueLeads.length})
+                </h2>
+
+                {overdueLeads.map((lead) => (
+                  <LeadCard
+                    key={lead.id}
+                    lead={lead}
+                    onClick={() =>
+                      setSelectedLead(lead)
+                    }
+                  />
+                ))}
+              </>
+            )}
+
+            {/* ALL LEADS */}
             <h2
               style={{
-                marginBottom: '20px',
-                color: '#dc2626',
+                marginTop: '24px',
+                marginBottom: '14px',
+                color: darkMode
+                  ? 'white'
+                  : '#111827',
+                fontSize: '16px',
               }}
             >
-              📅 Today's Follow-Ups (
-              {todaysFollowUps.length})
+              All Leads ({otherLeads.length})
             </h2>
 
-            {todaysFollowUps.map((lead) => (
+            {otherLeads.map((lead) => (
               <LeadCard
                 key={lead.id}
                 lead={lead}
-                onClick={() => setSelectedLead(lead)}
+                onClick={() =>
+                  setSelectedLead(lead)
+                }
               />
             ))}
-          </>
-        )}
+          </div>
 
-        {/* ALL LEADS */}
-        <h2
-          style={{
-            marginTop:
-              todaysFollowUps.length > 0
-                ? '40px'
-                : '0',
-            marginBottom: '20px',
-            color: darkMode ? 'white' : '#1e293b',
-          }}
-        >
-          All Leads ({otherLeads.length})
-        </h2>
-
-        {otherLeads.length === 0 ? (
-          <div
+          {/* ADD BUTTON */}
+          <button
+            onClick={() => setShowModal(true)}
             style={{
-              backgroundColor: darkMode
-                ? '#1e293b'
-                : 'white',
-              padding: '40px',
+              marginTop: '18px',
+              width: '100%',
+              padding: '14px',
               borderRadius: '16px',
-              textAlign: 'center',
-              color: darkMode
-                ? '#cbd5e1'
-                : '#64748b',
+              fontSize: '14px',
+              fontWeight: '700',
+              color: 'white',
+              background:
+                'linear-gradient(135deg, #2563eb, #4f46e5)',
+              border: 'none',
+              cursor: 'pointer',
               boxShadow:
-                '0 4px 12px rgba(0,0,0,0.05)',
+                '0 8px 20px rgba(37,99,235,0.25)',
             }}
           >
-            No leads found.
-          </div>
-        ) : (
-          otherLeads.map((lead) => (
-            <LeadCard
-              key={lead.id}
-              lead={lead}
-              onClick={() => setSelectedLead(lead)}
+            + Add Lead
+          </button>
+        </div>
+
+        {/* RIGHT PANEL */}
+        <div
+          style={{
+            overflowY: 'auto',
+            backgroundColor: darkMode
+              ? '#0f172a'
+              : '#f8fafc',
+          }}
+        >
+          {selectedLead ? (
+            <LeadTimelinePanel
+              lead={selectedLead}
+              onSuccess={fetchLeads}
+              darkMode={darkMode}
             />
-          ))
-        )}
+          ) : (
+            <div
+              style={{
+                height: '100vh',
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                padding: '40px',
+              }}
+            >
+              <div
+                style={{
+                  width: '100%',
+                  maxWidth: '420px',
+                  backgroundColor: darkMode
+                    ? '#111827'
+                    : 'white',
+                  border: darkMode
+                    ? '1px solid #1e293b'
+                    : '1px solid #e5e7eb',
+                  borderRadius: '28px',
+                  padding: '42px 36px',
+                  boxShadow: darkMode
+                    ? '0 10px 30px rgba(0,0,0,0.35)'
+                    : '0 10px 30px rgba(15,23,42,0.08)',
+                }}
+              >
+                <div
+                  style={{
+                    width: '72px',
+                    height: '72px',
+                    borderRadius: '22px',
+                    backgroundColor: darkMode
+                      ? '#1e293b'
+                      : '#f1f5f9',
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    marginBottom: '26px',
+                    fontSize: '30px',
+                  }}
+                >
+                  💬
+                </div>
 
-        {/* ADD LEAD MODAL */}
-        {showModal && (
-          <AddLeadModal
-            onClose={() => setShowModal(false)}
-            onSuccess={fetchLeads}
-          />
-        )}
+                <h2
+                  style={{
+                    margin: 0,
+                    marginBottom: '12px',
+                    fontSize: '28px',
+                    fontWeight: '700',
+                    color: darkMode
+                      ? 'white'
+                      : '#0f172a',
+                  }}
+                >
+                  No lead selected
+                </h2>
 
-        {/* TIMELINE MODAL */}
-        {selectedLead && (
-          <LeadTimelineModal
-            lead={selectedLead}
-            onClose={() => setSelectedLead(null)}
-            onSuccess={fetchLeads}
-          />
-        )}
+                <p
+                  style={{
+                    margin: 0,
+                    lineHeight: '1.7',
+                    fontSize: '15px',
+                    color: darkMode
+                      ? '#94a3b8'
+                      : '#64748b',
+                    marginBottom: '28px',
+                  }}
+                >
+                  Select a lead from the sidebar to
+                  view discussion history,
+                  follow-ups, and manage
+                  conversations.
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
+
+      {showModal && (
+        <AddLeadModal
+          onClose={() => setShowModal(false)}
+          onSuccess={fetchLeads}
+        />
+      )}
     </div>
   );
 }

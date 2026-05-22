@@ -65,7 +65,7 @@ function AddLeadModal({ onClose, onSuccess }) {
           <h2
             style={{
               margin: 0,
-              fontSize: '38px',
+              fontSize: '33px',
               fontWeight: '700',
               color: '#0f172a',
               marginBottom: '10px',

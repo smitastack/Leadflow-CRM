@@ -1,160 +1,168 @@
-# 🚀 LeadFlow CRM
+# LeadFlow CRM
 
-LeadFlow CRM is a full-stack customer relationship management (CRM) application built to manage leads, discussions, follow-ups, and sales status tracking.
+LeadFlow is a modern lead management CRM built using React, Vite, Node.js, Express.js, PostgreSQL, and Docker.
 
-The application allows users to:
+It helps businesses manage leads, track discussions, schedule follow-ups, and monitor overdue conversations through a clean and intuitive interface.
 
-- ➕ Create and manage leads
-- 📝 Track discussion history
-- 📅 Schedule follow-up reminders
-- 🔄 Update lead statuses
-- 🔍 Filter and search leads
-- ⚠️ Highlight overdue and today's follow-ups
+The project is fully Dockerized so reviewers and developers do not need to manually install or configure PostgreSQL and pgAdmin locally.
 
 ---
 
-# 🛠️ Tech Stack
+# Features
 
-## 🎨 Frontend
+- Add and manage leads
+- Track discussion history
+- Schedule follow-up reminders
+- Automatic overdue follow-up detection
+- Today's follow-up section
+- Overdue lead tracking
+- Lead status management
+- Search and filter leads
+- Dark mode support
+- Responsive split-panel dashboard
+- Beautiful discussion timeline UI
+- Dockerized full-stack setup
+
+---
+
+# Tech Stack
+
+## Frontend
 
 - React
 - Vite
 - JavaScript
-- Inline CSS Styling
+- Inline CSS
 
-## ⚙️ Backend
+## Backend
 
 - Node.js
 - Express.js
 
-## 🗄️ Database
+## Database
 
 - PostgreSQL
 - pgAdmin
 
----
+## DevOps / Containerization
 
-# ✨ Features
-
-- 📌 Lead creation and management
-- 🕒 Discussion timeline tracking
-- 📅 Follow-up scheduling
-- 🔄 Lead status updates
-- 🔍 Search functionality
-- 🎯 Status filtering
-- ⚠️ Overdue follow-up detection
-- 📌 Today's follow-up prioritization
-- 🌙 Dark mode support
+- Docker
+- Docker Compose
 
 ---
 
-# 📁 Project Structure
+# Screenshots
+
+## Dashboard
+
+![Dashboard](./screenshots/dashboard.png)
+
+---
+
+## Add Lead Modal
+
+![Add Lead Modal](./screenshots/AddLead.png)
+
+---
+
+# Folder Structure
 
 ```bash
 leadflow/
 │
-├── client/        # React frontend
-├── server/        # Express backend
-├── screenshots/   # Application screenshots
-├── README.md
-└── .gitignore
+├── client/
+│   ├── public/
+│   ├── src/
+│   │   ├── assets/
+│   │   │   ├── hero.png
+│   │   │   └── leadflow-logo.png
+│   │   │
+│   │   ├── components/
+│   │   │   ├── AddLeadModal.jsx
+│   │   │   ├── LeadCard.jsx
+│   │   │   └── LeadTimelinePanel.jsx
+│   │   │
+│   │   ├── App.jsx
+│   │   ├── index.css
+│   │   └── main.jsx
+│   │
+│   ├── Dockerfile
+│   ├── vite.config.js
+│   └── package.json
+│
+├── server/
+│   ├── db.js
+│   ├── index.js
+│   ├── initDb.js
+│   ├── seed.js
+│   ├── Dockerfile
+│   ├── .env
+│   ├── .env.example
+│   └── package.json
+│
+├── screenshots/
+│   ├── dashboard.png
+│   └── AddLead.png
+│
+├── docker-compose.yml
+├── .gitignore
+└── README.md
 ```
 
 ---
 
-# ⚡ Setup Instructions
+# How to Run the Project
 
-## 1️⃣ Clone Repository
+## Prerequisites
+
+Before running the project, make sure Docker Desktop is installed and running.
+
+Download Docker Desktop:
+
+- Windows / Mac:
+  https://www.docker.com/products/docker-desktop/
+
+---
+
+# Steps to Run the Project
+
+## 1. Clone the Repository
 
 ```bash
-git clone https://github.com/smitastack/Leadflow-CRM.git
+git clone <your-repository-url>
 ```
 
 ---
 
-## 2️⃣ Create PostgreSQL Database
-
-Create a PostgreSQL database named:
+## 2. Navigate to Project Folder
 
 ```bash
-leadflowdb
-```
-
-You can create it using:
-
-- PostgreSQL CLI
-- pgAdmin
-
----
-
-## 3️⃣ Create Required Tables
-
-Run the following SQL queries in PostgreSQL or pgAdmin:
-
-```sql
-CREATE TABLE users (
-  id SERIAL PRIMARY KEY,
-  name VARCHAR(100) NOT NULL,
-  created_at TIMESTAMP DEFAULT NOW()
-);
-
-CREATE TABLE leads (
-  id SERIAL PRIMARY KEY,
-  name VARCHAR(100) NOT NULL,
-  company VARCHAR(100),
-  phone VARCHAR(20),
-  status VARCHAR(50) DEFAULT 'New',
-  follow_up_at TIMESTAMP,
-  assigned_to INTEGER REFERENCES users(id),
-  created_at TIMESTAMP DEFAULT NOW(),
-  updated_at TIMESTAMP DEFAULT NOW()
-);
-
-CREATE TABLE discussions (
-  id SERIAL PRIMARY KEY,
-  lead_id INTEGER REFERENCES leads(id) ON DELETE CASCADE,
-  note TEXT NOT NULL,
-  created_at TIMESTAMP DEFAULT NOW()
-);
+cd leadflow
 ```
 
 ---
 
-## 4️⃣ Seed Sample Data
+## 3. Start the Application
 
-Run the following command to insert sample users, leads, and discussions into the database:
+Run the following command:
 
 ```bash
-node seed.js
+docker-compose up --build
 ```
+
+This command automatically:
+
+- Builds frontend container
+- Builds backend container
+- Starts PostgreSQL database
+- Starts pgAdmin
+- Connects all services together
 
 ---
 
-## 5️⃣ Backend Setup
+# Application URLs
 
-```bash
-cd server
-npm install
-npm run dev
-```
-
-Backend server runs on:
-
-```bash
-http://localhost:5000
-```
-
----
-
-## 6️⃣ Frontend Setup
-
-```bash
-cd client
-npm install
-npm run dev
-```
-
-Frontend runs on:
+## Frontend
 
 ```bash
 http://localhost:5173
@@ -162,152 +170,156 @@ http://localhost:5173
 
 ---
 
-# 🔐 Environment Variables
+## Backend API
 
-Create a `.env` file inside the `server` folder using `.env.example`.
+```bash
+http://localhost:5000
+```
+
+---
+
+## pgAdmin
+
+```bash
+http://localhost:5050
+```
+
+---
+
+# Stop the Application
+
+To stop all running containers:
+
+```bash
+docker-compose down
+```
+
+---
+
+# Environment Variables
+
+Create a `.env` file inside the `server` folder.
 
 Example:
 
 ```env
-DB_USER=postgres
-DB_HOST=localhost
-DB_NAME=leadflowdb
-DB_PASSWORD=your_password
+DB_HOST=postgres
 DB_PORT=5432
-PORT=5000
+DB_USER=postgres
+DB_PASSWORD=postgres
+DB_NAME=leadflow
 ```
 
 ---
 
-# 🌐 API Endpoints
+# Lead Statuses
 
-## 📌 Leads
+LeadFlow supports the following lead stages:
 
-### Get All Leads
-
-```http
-GET /api/leads
-```
-
-### Create Lead
-
-```http
-POST /api/leads
-```
-
-### Update Lead Status
-
-```http
-PATCH /api/leads/:id
-```
+- New
+- Contacted
+- Qualified
+- Proposal Sent
+- Won
+- Lost
 
 ---
 
-## 💬 Discussions
+# Follow-Up Logic
 
-### Get Discussions For Lead
+## Today's Follow-Ups
 
-```http
-GET /api/leads/:id/discussions
-```
+A lead appears inside **Today's Follow-Ups** when:
 
-### Create Discussion
-
-```http
-POST /api/leads/:id/discussions
-```
+- Follow-up date is today
+- Follow-up time has not passed yet
+- Lead status is not `Won`
+- Lead status is not `Lost`
 
 ---
 
-# 🔄 Application Flow
+## Overdue Leads
 
-1. 👤 User interacts with the React frontend
-2. 📡 Frontend sends API requests to Express backend
-3. ⚙️ Backend processes requests and interacts with PostgreSQL database
-4. 🗄️ Database returns data to backend
-5. 📦 Backend sends JSON responses to frontend
-6. 🎨 React dynamically updates the UI
+A lead appears inside **Overdue** when:
 
----
-
-# 📅 Follow-Up Logic
-
-- Follow-up dates are stored in PostgreSQL
-- Frontend compares `follow_up_at` with current system date
-- 📌 Today's follow-ups are automatically highlighted
-- ⚠️ Overdue follow-ups are marked with warning indicators
+- Follow-up time has already passed
+- Lead status is not `Won`
+- Lead status is not `Lost`
 
 ---
 
-# 📸 Screenshots
+# Main Components
 
-## 🏠 Dashboard
+## App.jsx
 
-![Dashboard](screenshots/dashboard.png)
+Handles:
 
----
-
-## ➕ Add New Lead
-
-![Add New Lead](screenshots/add_new_lead.png)
-
----
-
-## ✅ Created Lead
-
-![Created Lead](screenshots/created_lead.png)
+- Dashboard layout
+- Lead fetching
+- Search and filtering
+- Follow-up grouping
+- Lead sorting
+- Dark mode
 
 ---
 
-## 💬 Add Discussion
+## AddLeadModal.jsx
 
-![Add Discussion](screenshots/add_discussion.png)
+Handles:
 
----
-
-## 🕒 Discussion Timeline
-
-![Discussion Timeline](screenshots/discussion_timeline.png)
+- Adding new leads
+- Form validation
+- API integration for lead creation
 
 ---
 
-## 🔄 Status Update
+## LeadCard.jsx
 
-![Status Update](screenshots/status_update.png)
+Displays:
 
----
-
-## 🔍 Lead Search
-
-![Lead Search](screenshots/searchlead.png)
-
----
-
-## 🎯 Lead Filtering
-
-![Lead Filtering](screenshots/filter.png)
+- Lead details
+- Status badges
+- Follow-up reminders
+- Overdue alerts
 
 ---
 
-## 🌙 Dark / Light Mode
+## LeadTimelinePanel.jsx
 
-![Dark Light Mode](screenshots/dark_light_mode_toggle.png)
+Handles:
 
-## 📅 Follow-Up Reminder
-
-![Follow-Up Reminder](screenshots/follow_up.png)
-
-# 🚀 Future Improvements
-
-- 🔐 Authentication system
-- 👥 User roles and permissions
-- 📧 Email notifications
-- 📊 Dashboard analytics
-- 📌 Lead assignment tracking
-- ☁️ Deployment support
+- Discussion timeline
+- Discussion history
+- Follow-up scheduling
+- Lead status updates
 
 ---
 
-# 👩‍💻 Author
+# Example Workflow
+
+1. Add a new lead
+2. Open lead timeline
+3. Add discussion notes
+4. Schedule a follow-up reminder
+5. Monitor today's follow-ups
+6. Track overdue leads
+7. Update lead status to Won or Lost
+
+---
+
+# Future Improvements
+
+- Authentication system
+- Email reminders
+- Push notifications
+- Team collaboration
+- Analytics dashboard
+- Calendar integration
+- Lead priority system
+- Mobile optimization
+
+---
+
+# Author
 
 Smita Sarangi
