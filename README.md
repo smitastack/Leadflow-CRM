@@ -129,7 +129,8 @@ Download Docker Desktop:
 ## 1. Clone the Repository
 
 ```bash
-git clone <your-repository-url>
+git clone https://github.com/smitastack/Leadflow-CRM.git
+
 ```
 
 ---
